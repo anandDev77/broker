@@ -66,6 +66,8 @@ jobs:
     name: Setup, Build, Publish Deploy
     runs-on: ubuntu-latest
     environment: production
+    outputs:
+      acr_login_server: ${{ steps.set_acr_login_server.outputs.acr_login_server }}
 
     steps:
     # ---------------------------------------------------------------------------------
@@ -124,6 +126,11 @@ jobs:
         docker tag $ACR_LOGIN_SERVER/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} $ACR_LOGIN_SERVER/${{ env.IMAGE_NAME }}:latest
         docker push $ACR_LOGIN_SERVER/${{ env.IMAGE_NAME }}:latest
 
+    - name: Get ACR login server
+      id: set_acr_login_server
+      run: |
+        echo "acr_login_server=$(az acr show --name $ACR_NAME --query loginServer --output tsv)" >> $GITHUB_OUTPUT
+
   update-gitops-repo:
     name: Publish image updates to gitops repo
     runs-on: ubuntu-latest
@@ -140,17 +147,6 @@ jobs:
           path: gitops
           token: ${{ secrets.GITOPS_TOKEN }}
 
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          enable-AzPSSession: true
-
-      - name: Azure ACR Login
-        run: az acr login --name $ACR_NAME
-
       # ---------------------------------------------------------------------------------
       # Step 2: Update the application manifest (YAML) with the new image repository and tag.
       # - Uses yq to update the .spec.broker.image.repository and .spec.broker.image.tag fields.
@@ -166,7 +162,7 @@ jobs:
           cd gitops
           echo "print yq version"
           yq --version
-          ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query loginServer --output tsv)
+          ACR_LOGIN_SERVER="${{ needs.setup-build-publish-deploy.outputs.acr_login_server }}"
           echo "ACR_LOGIN_SERVER: $ACR_LOGIN_SERVER"
           APP_IMAGE="$ACR_LOGIN_SERVER/${IMAGE_NAME}"
           echo "APP_IMAGE: $APP_IMAGE"
