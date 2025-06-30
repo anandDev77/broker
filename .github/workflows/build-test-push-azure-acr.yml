@@ -140,6 +140,17 @@ jobs:
           path: gitops
           token: ${{ secrets.GITOPS_TOKEN }}
 
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          enable-AzPSSession: true
+
+      - name: Azure ACR Login
+        run: az acr login --name $ACR_NAME
+
       # ---------------------------------------------------------------------------------
       # Step 2: Update the application manifest (YAML) with the new image repository and tag.
       # - Uses yq to update the .spec.broker.image.repository and .spec.broker.image.tag fields.
