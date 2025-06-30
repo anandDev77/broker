@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     outputs:
-      acr_login_server: ${{ steps.set_acr_login_server.outputs.acr_login_server }}
+      acr_login_server: ${{ steps.build_and_output_acr.outputs.acr_login_server }}
 
     steps:
     # ---------------------------------------------------------------------------------
@@ -117,19 +117,16 @@ jobs:
     # - Uses build args for traceability.
     # - Pushes both tags to ACR.
     # ---------------------------------------------------------------------------------
-    - name: Build and Push Docker Image to ACR
+    - name: Build, Push Docker Image to ACR, and Output Login Server
+      id: build_and_output_acr
       run: |
         ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query loginServer --output tsv)
+        echo "acr_login_server=$ACR_LOGIN_SERVER" >> $GITHUB_OUTPUT
         docker build -t $ACR_LOGIN_SERVER/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
           --build-arg GITHUB_SHA="$GITHUB_SHA" .
         docker push $ACR_LOGIN_SERVER/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
         docker tag $ACR_LOGIN_SERVER/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} $ACR_LOGIN_SERVER/${{ env.IMAGE_NAME }}:latest
         docker push $ACR_LOGIN_SERVER/${{ env.IMAGE_NAME }}:latest
-
-    - name: Get ACR login server
-      id: set_acr_login_server
-      run: |
-        echo "acr_login_server=$(az acr show --name $ACR_NAME --query loginServer --output tsv)" >> $GITHUB_OUTPUT
 
   update-gitops-repo:
     name: Publish image updates to gitops repo
