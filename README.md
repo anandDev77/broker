@@ -69,3 +69,5 @@ Use the WebSphere Liberty helm chart to deploy the Broker microservice:
 helm repo add ibm-charts https://raw.githubusercontent.com/IBM/charts/master/repo/stable/
 helm install ibm-charts/ibm-websphere-liberty -f <VALUES_YAML> -n <RELEASE_NAME> --tls
 ```
+
+
