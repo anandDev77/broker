@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - '**'
+      - feat-EntraIDRBAC
   workflow_dispatch: {}
 
 env:
