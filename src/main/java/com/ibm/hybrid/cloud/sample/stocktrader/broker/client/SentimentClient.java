@@ -30,9 +30,7 @@ import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 
-@ApplicationPath("/")
 @Path("/")
-@ApplicationScoped
 @RegisterRestClient
 @RegisterClientHeaders //To enable JWT propagation
 // JWT is propagated.  See src/main/resources/META-INF/microprofile-config.properties
