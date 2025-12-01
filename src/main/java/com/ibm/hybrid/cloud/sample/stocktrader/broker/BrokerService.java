@@ -20,6 +20,7 @@ package com.ibm.hybrid.cloud.sample.stocktrader.broker;
 import com.ibm.hybrid.cloud.sample.stocktrader.broker.client.AccountClient;
 import com.ibm.hybrid.cloud.sample.stocktrader.broker.client.CashAccountClient;
 import com.ibm.hybrid.cloud.sample.stocktrader.broker.client.PortfolioClient;
+import com.ibm.hybrid.cloud.sample.stocktrader.broker.client.SentimentClient;
 //import com.ibm.hybrid.cloud.sample.stocktrader.broker.client.TradeHistoryClient;
 import com.ibm.hybrid.cloud.sample.stocktrader.broker.client.tradehistory.TradeHistoryClient;
 import com.ibm.hybrid.cloud.sample.stocktrader.broker.json.Account;
@@ -27,6 +28,7 @@ import com.ibm.hybrid.cloud.sample.stocktrader.broker.json.Broker;
 import com.ibm.hybrid.cloud.sample.stocktrader.broker.json.CashAccount;
 import com.ibm.hybrid.cloud.sample.stocktrader.broker.json.Feedback;
 import com.ibm.hybrid.cloud.sample.stocktrader.broker.json.Portfolio;
+import com.ibm.hybrid.cloud.sample.stocktrader.broker.json.Sentiment;
 import com.ibm.hybrid.cloud.sample.stocktrader.broker.json.WatsonInput;
 
 
@@ -86,6 +88,7 @@ public class BrokerService extends Application {
 	private static boolean useAccount = false;
 	private static boolean useCashAccount = false;
 	private static boolean useTradeHistory = false;
+	private static boolean useSentiment = false;
 	private static boolean useCQRS = false;
 	private static boolean initialized = false;
 	private static boolean staticInitialized = false;
@@ -95,6 +98,7 @@ public class BrokerService extends Application {
 	private @Inject @RestClient AccountClient accountClient;
 	private @Inject @RestClient CashAccountClient cashAccountClient;
 	private @Inject @RestClient TradeHistoryClient tradeHistoryClient;
+	private @Inject @RestClient SentimentClient sentimentClient;
 
 	@Inject private Tracer tracer;
 
@@ -111,6 +115,9 @@ public class BrokerService extends Application {
 
 		useTradeHistory = Boolean.parseBoolean(System.getenv("TRADE_HISTORY_ENABLED"));
 		logger.info("Trade History microservice enabled: " + useTradeHistory);
+
+		useSentiment = Boolean.parseBoolean(System.getenv("SENTIMENT_API_ENABLED"));
+		logger.info("Sentiment API enabled: " + useSentiment);
 
 		useCQRS = Boolean.parseBoolean(System.getenv("CQRS_ENABLED"));
 		logger.info("CQRS enabled: " + useCQRS);
@@ -150,6 +157,15 @@ public class BrokerService extends Application {
 			System.setProperty(mpUrlPropName, urlFromEnv);
 		} else {
 			logger.info("Trade History URL not found from env var from config map, so defaulting to value in jvm.options: " + System.getProperty(mpUrlPropName));
+		}
+
+		mpUrlPropName = SentimentClient.class.getName() + "/mp-rest/url";
+		urlFromEnv = System.getenv("SENTIMENT_API_URL");
+		if ((urlFromEnv != null) && !urlFromEnv.isEmpty()) {
+			logger.info("Using Sentiment API URL from config map: " + urlFromEnv);
+			System.setProperty(mpUrlPropName, urlFromEnv);
+		} else {
+			logger.info("Sentiment API URL not found from env var from config map, so defaulting to value in jvm.options: " + System.getProperty(mpUrlPropName));
 		}
 	}
 
@@ -453,6 +469,22 @@ public class BrokerService extends Application {
 		Broker broker = null;
 		Account account = null;
 		Portfolio portfolio = null;
+		Sentiment sentiment = null;
+
+		// Call sentiment API before executing trade (non-blocking)
+		if (useSentiment && symbol != null && !symbol.isEmpty()) {
+			try {
+				logger.fine("Calling SentimentClient.getSentiment() for symbol: " + symbol);
+				sentiment = sentimentClient.getSentiment(symbol);
+				if (sentiment != null) {
+					logger.fine("Got sentiment for " + symbol + ": " + sentiment.getDominantSentiment());
+				}
+			} catch (Throwable t) {
+				logger.warning("Sentiment API call failed for " + symbol + ": " + t.getMessage());
+				// Continue with trade execution - sentiment is optional
+				logException(t);
+			}
+		}
 
 		double commission = 0.0;
 		String accountID = null;
@@ -482,6 +514,11 @@ public class BrokerService extends Application {
 				logException(t);
 			}
 			broker = new Broker(portfolio, account);
+
+			// Set sentiment if available
+			if (sentiment != null) {
+				broker.setStockSentiment(sentiment);
+			}
 
 			CashAccount cashAccount = null;
 			if (useCashAccount) {
