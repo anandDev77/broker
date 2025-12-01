@@ -432,6 +432,31 @@ public class BrokerService extends Application {
 
 		return broker;
 	}
+
+	@GET
+	@Path("/sentiment/{symbol}")
+	@Produces(MediaType.APPLICATION_JSON)
+//	@RolesAllowed({"StockTrader", "StockViewer"}) //Couldn't get this to work; had to do it through the web.xml instead :(
+	public Sentiment getSentiment(@PathParam("symbol") String symbol, @Context HttpServletRequest request) {
+		Sentiment sentiment = null;
+
+		// Call sentiment API (non-blocking, same logic as in updateBroker)
+		if (useSentiment && symbol != null && !symbol.isEmpty()) {
+			try {
+				logger.fine("Calling SentimentClient.getSentiment() for symbol: " + symbol);
+				sentiment = sentimentClient.getSentiment(symbol);
+				if (sentiment != null) {
+					logger.fine("Got sentiment for " + symbol + ": " + sentiment.getDominantSentiment());
+				}
+			} catch (Throwable t) {
+				logger.warning("Sentiment API call failed for " + symbol + ": " + t.getMessage());
+				// Return null if sentiment API fails - it's optional
+				logException(t);
+			}
+		}
+
+		return sentiment;
+	}
     
 	@GET
 	@Path("/{owner}/returns")
