@@ -17,15 +17,20 @@
 
 package com.ibm.hybrid.cloud.sample.stocktrader.broker.json;
 
+import jakarta.json.bind.annotation.JsonbProperty;
+
 /** JSON-B POJO class representing a Sentiment JSON object from the Sentiment Analysis API */
 public class Sentiment {
     private String symbol;
     private double positive;
     private double negative;
     private double neutral;
+    @JsonbProperty("net_sentiment")
     private double netSentiment;
+    @JsonbProperty("dominant_sentiment")
     private String dominantSentiment;
     private String timestamp;
+    @JsonbProperty("sources_analyzed")
     private int sourcesAnalyzed;
 
     public Sentiment() { //default constructor
