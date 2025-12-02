@@ -68,18 +68,22 @@ public class Sentiment {
         this.neutral = neutral;
     }
 
+    @JsonbProperty("net_sentiment")
     public double getNetSentiment() {
         return netSentiment;
     }
 
+    @JsonbProperty("net_sentiment")
     public void setNetSentiment(double netSentiment) {
         this.netSentiment = netSentiment;
     }
 
+    @JsonbProperty("dominant_sentiment")
     public String getDominantSentiment() {
         return dominantSentiment;
     }
 
+    @JsonbProperty("dominant_sentiment")
     public void setDominantSentiment(String dominantSentiment) {
         this.dominantSentiment = dominantSentiment;
     }
@@ -92,10 +96,12 @@ public class Sentiment {
         this.timestamp = timestamp;
     }
 
+    @JsonbProperty("sources_analyzed")
     public int getSourcesAnalyzed() {
         return sourcesAnalyzed;
     }
 
+    @JsonbProperty("sources_analyzed")
     public void setSourcesAnalyzed(int sourcesAnalyzed) {
         this.sourcesAnalyzed = sourcesAnalyzed;
     }
@@ -103,6 +109,20 @@ public class Sentiment {
     // Convenience method to get dominant sentiment (matching API response field name)
     public String getDominant() {
         return dominantSentiment;
+    }
+    
+    @Override
+    public String toString() {
+        return "Sentiment{" +
+            "symbol='" + symbol + '\'' +
+            ", positive=" + positive +
+            ", negative=" + negative +
+            ", neutral=" + neutral +
+            ", netSentiment=" + netSentiment +
+            ", dominantSentiment='" + dominantSentiment + '\'' +
+            ", timestamp='" + timestamp + '\'' +
+            ", sourcesAnalyzed=" + sourcesAnalyzed +
+            '}';
     }
 }
 

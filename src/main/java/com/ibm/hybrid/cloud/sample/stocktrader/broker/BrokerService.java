@@ -443,16 +443,20 @@ public class BrokerService extends Application {
 		// Call sentiment API (non-blocking, same logic as in updateBroker)
 		if (useSentiment && symbol != null && !symbol.isEmpty()) {
 			try {
-				logger.fine("Calling SentimentClient.getSentiment() for symbol: " + symbol);
+				logger.info("Broker.getSentiment: Calling SentimentClient.getSentiment() for symbol: " + symbol);
 				sentiment = sentimentClient.getSentiment(symbol);
 				if (sentiment != null) {
-					logger.fine("Got sentiment for " + symbol + ": " + sentiment.getDominantSentiment());
+					logger.info("Broker.getSentiment: Received sentiment for " + symbol + " - " + sentiment.toString());
+				} else {
+					logger.warning("Broker.getSentiment: Sentiment API returned null for " + symbol);
 				}
 			} catch (Throwable t) {
-				logger.warning("Sentiment API call failed for " + symbol + ": " + t.getMessage());
+				logger.warning("Broker.getSentiment: Sentiment API call failed for " + symbol + ": " + t.getMessage());
 				// Return null if sentiment API fails - it's optional
 				logException(t);
 			}
+		} else {
+			logger.warning("Broker.getSentiment: Sentiment API not enabled or symbol is empty");
 		}
 
 		return sentiment;
